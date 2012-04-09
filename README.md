@@ -2,6 +2,13 @@
 
 A Unix type file system implemented in javascript.
 
+##Features
+
++ Symlinks
++ Directories
++ Files
++ Current directory
+
 ##API
 
 Access it via any AMD module format loader (whatever they're called) such as require.js.
