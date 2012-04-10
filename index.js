@@ -19,9 +19,9 @@ define(['require', 'exports'], function(require, exports) {
 	};
 	
 	function clone(o) {
-		function O() {}
-		O.prototype = o;
-		return new O;
+		function cloned() {}
+		cloned.prototype = o;
+		return new cloned;
 	}
 	
 	var Filesystem = exports.Filesystem = (function() {
