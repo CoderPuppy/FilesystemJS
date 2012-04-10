@@ -139,7 +139,17 @@ define(['require', 'exports'], function(require, exports) {
 			return Object.keys(dir.files).map(function(name) {
 				return dir.files[name];
 			});
-		}
+		};
+		
+		Filesystem.prototype.exec = function exec(file, args, pipes) {
+			return "not-implemented";
+		};
+		
+		Filesystem.prototype.setAsExec = function setAsExec(file) {
+			if(file && !this.isDir(file)) file.executable = true;
+			
+			return file;
+		};
 
 		Filesystem.prototype.hasFile = function hasFile(dir, name) {
 			return dir && dir.files && dir.files[name];
@@ -156,6 +166,10 @@ define(['require', 'exports'], function(require, exports) {
 		Filesystem.prototype.isSymlink = function isSymlink(file) {
 			return file && file.symlink;
 		}
+		
+		Filesystem.prototype.isExec = function isExec(file) {
+			return file && file.executable;
+		};
 		
 		return Filesystem;
 	})();
