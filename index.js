@@ -25,7 +25,7 @@ define(['require', 'exports'], function(require, exports) {
 	}
 	
 	var Filesystem = exports.Filesystem = (function() {
-		function Filesystem() {
+		function Filesystem(data) {
 			this.data = nameify(parentify(data || clone(defaultData)));
 			this.currentDir = this.data.root;
 		}
