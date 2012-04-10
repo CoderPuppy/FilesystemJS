@@ -33,12 +33,13 @@ define(['require', 'exports'], function(require, exports) {
 		//var currentDir = exports.currentDir = fs.root;
 
 		Filesystem.prototype.getFile = function getFile(path, curDir) {
-				var tmpDir, pathArr;
+				var tmpDir, pathArr, self;
 			
 				if(!curDir) curDir = this.currentDir;
 				if(!path || path.length == 0) return curDir;
 				if(path.length > 0 && path[0] == '/') curDir = this.data.root;
-			
+				
+				self = this
 				tmpDir = curDir;
 				pathArr = path.split('/');
 			
@@ -48,14 +49,14 @@ define(['require', 'exports'], function(require, exports) {
 							tmpDir = tmpDir.parent || tmpDir;
 						} else if(part == '.') {
 							return;
-						} else if(this.isDir(tmpDir)) {
-							if(this.hasFile(tmpDir, part)) tmpDir = tmpDir.files[part];
+						} else if(self.isDir(tmpDir)) {
+							if(self.hasFile(tmpDir, part)) tmpDir = tmpDir.files[part];
 							else throw new Error("FileNotFoundError: Can not find file: '" +
 								part +
 								"' in directory: '" +
-								this.pathTo(tmpDir));
-							if(this.isSymlink(tmpDir)) {
-								tmpDir = this.getSymlink(tmpDir);
+								self.pathTo(tmpDir));
+							if(self.isSymlink(tmpDir)) {
+								tmpDir = self.getSymlink(tmpDir);
 							}
 						} else {
 							return false;
