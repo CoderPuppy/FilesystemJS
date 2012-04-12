@@ -70,9 +70,12 @@ define(['require', 'exports'], function(require, exports) {
 		};
 
 		Filesystem.prototype.pathTo = function pathTo(file, /* internal */ isNested) {
-			if(!isNested && file.name == this.data.root.name) return '/';
+			if(file.name == this.data.root.name) {
+				if(!isNested) return '/';
+				else return '';
+			}
 			if(!!file === false || (!!file && !!file.name && file.name == this.data.root.name)) {
-				return "";
+				return '';
 			}
 		
 			return this.pathTo(file.parent, true) + '/' + file.name;
