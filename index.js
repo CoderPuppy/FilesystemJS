@@ -1,4 +1,4 @@
-define(['require', 'exports'], function(require, exports) {
+define(['require', 'exports', './stream'], function(require, exports, Stream) {
 	var defaultData = exports.defaultData = {
 		root: parentify(nameify({
 			name: 'FILESYSTEM_ROOT_/',
@@ -84,6 +84,24 @@ define(['require', 'exports'], function(require, exports) {
 
 			return dir;
 		}
+		
+		Filesystem.prototype.openStream = function openStream(file, options) {
+			var stream = new Stream({ paused: true }), self = this;
+			
+			if(options && options.dir == 'in' && this.isFile(file)) {
+				stream.on('unpause', function() {
+					stream.write(self.readFile(file));
+				});
+			} else {
+				if(!options || !options.appending) this.writeData(file, '');
+				
+				stream.on('data', function(d) {
+					self.writeData(file, d, { appending: true });
+				});
+			}
+			
+			return stream;
+		};
 
 		Filesystem.prototype.createFile = function createFile(fileName, curDir) {
 			var split, dir;
@@ -108,8 +126,8 @@ define(['require', 'exports'], function(require, exports) {
 			return file;
 		}
 
-		Filesystem.prototype.writeData = function writeData(file, data) {
-			if(file && data) file.contents = data;
+		Filesystem.prototype.writeData = function writeData(file, data, options) {
+			if(file && typeof(data) != 'undefined') file.contents = (options && options.appending ? file.contents : '') + data;
 
 			return file;
 		};
