@@ -173,7 +173,15 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		};
 
 		Filesystem.prototype.hasFile = function hasFile(dir, name) {
-			return dir && dir.files && dir.files[name];
+			var good = false;
+			
+			var nameSplit = name.split('/'), tmpDir = dir || this.currentDir;
+			
+			tmpDir = this.getFile(nameSplit.slice(0, nameSplit.length - 1).join('/'), tmpDir);
+			
+			good = !!(tmpDir && tmpDir.files && tmpDir.files[nameSplit[nameSplit.length - 1]]);
+			
+			return good;
 		};
 
 		Filesystem.prototype.isDir = function isDir(file) {
