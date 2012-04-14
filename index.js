@@ -86,10 +86,10 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		}
 		
 		Filesystem.prototype.openStream = function openStream(file, options) {
-			var stream = new Stream({ paused: true }), self = this;
+			var stream = new Stream(), self = this;
 			
 			if(options && options.dir == 'in' && this.isFile(file)) {
-				stream.on('unpause', function() {
+				stream.pause().on('unpause', function() {
 					stream.write(self.readFile(file));
 				});
 			} else {
