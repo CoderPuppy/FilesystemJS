@@ -31,8 +31,6 @@ define(['require', 'exports'], function(require, exports) {
 			
 			this.data.root = nameify(parentify(this.data.root));
 		}
-	
-		//var currentDir = exports.currentDir = fs.root;
 
 		Filesystem.prototype.getFile = function getFile(path, curDir) {
 				var tmpDir, pathArr, self;
