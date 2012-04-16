@@ -141,10 +141,6 @@ define(['require', 'exports'], function(require, exports) {
 			});
 		};
 		
-		Filesystem.prototype.exec = function exec(file, args, pipes) {
-			return "not-implemented";
-		};
-		
 		Filesystem.prototype.setAsExec = function setAsExec(file) {
 			if(file && !this.isDir(file)) file.executable = true;
 			
