@@ -1,4 +1,4 @@
-define(['require', 'exports'], function(require, exports) {
+define(['require', 'exports', './stream'], function(require, exports, Stream) {
 	var defaultData = exports.defaultData = {
 		root: parentify(nameify({
 			name: 'FILESYSTEM_ROOT_/',
@@ -26,11 +26,11 @@ define(['require', 'exports'], function(require, exports) {
 	
 	var Filesystem = exports.Filesystem = (function() {
 		function Filesystem(data) {
-			this.data = nameify(parentify(data || clone(defaultData)));
+			this.data = data || clone(defaultData);
 			this.currentDir = this.data.root;
+			
+			this.data.root = nameify(parentify(this.data.root));
 		}
-	
-		//var currentDir = exports.currentDir = fs.root;
 
 		Filesystem.prototype.getFile = function getFile(path, curDir) {
 				var tmpDir, pathArr, self;
@@ -68,9 +68,12 @@ define(['require', 'exports'], function(require, exports) {
 		};
 
 		Filesystem.prototype.pathTo = function pathTo(file, /* internal */ isNested) {
-			if(!isNested && file.name == this.data.root.name) return '/';
-			if(!!file === false || (!!file && !!file.name && file.name == fs.root.name)) {
-				return "";
+			if(file.name == this.data.root.name) {
+				if(!isNested) return '/';
+				else return '';
+			}
+			if(!!file === false || (!!file && !!file.name && file.name == this.data.root.name)) {
+				return '';
 			}
 		
 			return this.pathTo(file.parent, true) + '/' + file.name;
@@ -81,6 +84,24 @@ define(['require', 'exports'], function(require, exports) {
 
 			return dir;
 		}
+		
+		Filesystem.prototype.openStream = function openStream(file, options) {
+			var stream = new Stream(), self = this;
+			
+			if(options && options.dir == 'in' && this.isFile(file)) {
+				stream.pause().on('unpause', function() {
+					stream.write(self.readFile(file));
+				});
+			} else {
+				if(!options || !options.appending) this.writeData(file, '');
+				
+				stream.on('data', function(d) {
+					self.writeData(file, d, { appending: true });
+				});
+			}
+			
+			return stream;
+		};
 
 		Filesystem.prototype.createFile = function createFile(fileName, curDir) {
 			var split, dir;
@@ -105,8 +126,8 @@ define(['require', 'exports'], function(require, exports) {
 			return file;
 		}
 
-		Filesystem.prototype.writeData = function writeData(file, data) {
-			if(file && data) file.contents = data;
+		Filesystem.prototype.writeData = function writeData(file, data, options) {
+			if(file && typeof(data) != 'undefined') file.contents = (options && options.appending ? file.contents : '') + data;
 
 			return file;
 		};
@@ -148,7 +169,15 @@ define(['require', 'exports'], function(require, exports) {
 		};
 
 		Filesystem.prototype.hasFile = function hasFile(dir, name) {
-			return dir && dir.files && dir.files[name];
+			var good = false;
+			
+			var nameSplit = name.split('/'), tmpDir = dir || this.currentDir;
+			
+			tmpDir = this.getFile(nameSplit.slice(0, nameSplit.length - 1).join('/'), tmpDir);
+			
+			good = !!(tmpDir && tmpDir.files && tmpDir.files[nameSplit[nameSplit.length - 1]]);
+			
+			return good;
 		};
 
 		Filesystem.prototype.isDir = function isDir(file) {
