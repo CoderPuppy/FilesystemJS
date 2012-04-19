@@ -179,6 +179,20 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			
 			return good;
 		};
+		
+		Filesystem.prototype.contentType = function contentType(file) {
+			var contentType = 'application/null';
+			
+			if(file && file.contentType) {
+				contentType = file.contentType;
+			} else if(this.isDir(file)) {
+				contentType = 'filesystem/folder';
+			} else if(file && file.command) {
+				contentType = 'application/command';
+			}
+			
+			return contentType;
+		};
 
 		Filesystem.prototype.isDir = function isDir(file) {
 			return file && file.files;
