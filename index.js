@@ -108,7 +108,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				return tmpDir;
 		};
 
-		Filesystem.prototype.pathTo = function pathTo(file, /* internal */ isNested) {
+		Filesystem.prototype.pathTo = function pathTo(file, dir, /* internal */ isNested) {
 			if(file.name == this.data.root.name) {
 				if(!isNested) return '/';
 				else return '';
@@ -117,7 +117,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				return '';
 			}
 		
-			return this.pathTo(file.parent, true) + '/' + file.name;
+			return ( file.parent == dir ? '' : this.pathTo(file.parent, dir, true) + '/' ) + file.name;
 		};
 
 		Filesystem.prototype.changeDir = function changeDir(dir) {
@@ -305,6 +305,10 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			return val < min ? min : val;
 		}
 		
+		function createFileRe(part) {
+			return new RegExp('^' + part.replace(/[\.\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.?').replace(/[-[\]{}()+,^$|#\s]/g, "\\$&") + '$');
+		}
+		
 		Filesystem.prototype._getFiles = function _getFiles(where, options) {
 			options = options || {};
 			
@@ -340,9 +344,11 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			searchFiles = Object.values(dir.files);
 			
 			if(part === '**') {
-				files = files.concat(searchFiles);
+				files = searchFiles;
 			} else if(/\*|\?/g.test(part)) {
-				files = files.concat(searchFiles); 
+				files = searchFiles.filter(function(file) {
+					return createFileRe(part).test(self.pathTo(file, dir));
+				}); 
 			} else if(part == '..') {
 				files.push(dir.parent || dir);
 			} else if(dir.files[part]) {
