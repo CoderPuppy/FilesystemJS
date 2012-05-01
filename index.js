@@ -181,12 +181,12 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		};
 		
 		Filesystem.prototype.contentType = function contentType(file) {
-			var contentType = 'application/null';
+			var contentType = 'file/empty';
 			
 			if(file && file.contentType) {
 				contentType = file.contentType;
 			} else if(this.isDir(file)) {
-				contentType = 'filesystem/folder';
+				contentType = 'file/folder';
 			} else if(file && file.command) {
 				contentType = 'application/command';
 			}
