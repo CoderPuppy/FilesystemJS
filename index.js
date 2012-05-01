@@ -108,7 +108,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		
 			if(!curDir) curDir = this.currentDir;
 
-			split = fileName.split('/');
+			split = fileName.split(/(^|\\\\|[^\\])\//);
 			dir = this.getFile(split.slice(0, split.length - 2).join('/'), curDir);
 		
 			console.log('dir:', dir);
@@ -171,7 +171,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		Filesystem.prototype.hasFile = function hasFile(dir, name) {
 			var good = false;
 			
-			var nameSplit = name.split('/'), tmpDir = dir || this.currentDir;
+			var nameSplit = name.split(/(^|\\\\|[^\\])\//), tmpDir = dir || this.currentDir;
 			
 			tmpDir = this.getFile(nameSplit.slice(0, nameSplit.length - 1).join('/'), tmpDir);
 			
