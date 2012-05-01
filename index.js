@@ -152,12 +152,11 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 
 			split = fileName.split(/(^|\\\\|[^\\])\//);
 			dir = this.getFile(split.slice(0, split.length - 2).join('/'), curDir);
-		
-			console.log('dir:', dir);
 
 			if(!this.hasFile(dir, split[split.length - 1])) {
 				return dir.files[split[split.length - 1]] = {
-					name: split[split.length - 1]
+					name: split[split.length - 1],
+					parent: dir
 				};
 			}
 		};
