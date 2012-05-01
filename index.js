@@ -210,8 +210,86 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			return file && file.executable;
 		};
 		
+		// New easier API
+		
+		Filesystem.prototype.file = function file(fileName, options) {
+			options = options || {};
+			
+			var createMode = options.create || exports.NONE,
+				tmpDir = ( typeof(options.dir) == 'string' ? this.folder(options.dir) : options.dir ) || this.currentDir,
+				type = options.type || exports.BOTH,
+				symlinkMode = options.resolveSymlink || exports.ALL,
+				pathArr, self;
+			
+			if(!fileName || fileName.length == 0) return tmpDir;
+			if(fileName.length > 0 && fileName[0] == '/') tmpDir = this.data.root;
+			
+			self = this
+			pathArr = fileName.split(/(^|\\\\|[^\\])\//);
+		
+			pathArr.forEach(function(part, index) {
+				if(part) {
+					if(part == '..') {
+						tmpDir = tmpDir.parent || tmpDir;
+					} else if(part == '.') {
+						return;
+					} else {
+						if(self.isDir(tmpDir)) {
+							if(self.hasFile(tmpDir, part)) {
+								tmpDir = tmpDir.files[part];
+							} else if(createMode === exports.ALL || ( createMode === exports.FINAL && i === pathArr.length - 1 )) {
+								tmpDir = self.createFile(part, tmpDir);
+								
+								if(i === pathArr.length - 1) {
+									if(typeof(options.symlink) == 'string') {
+										tmpDir.symlink = options.symlink;
+									} else {
+										if(type === exports.FILE) {
+											tmpDir.contents = '';
+										} else if(type === exports.FOLDER) {
+											tmpDir.files = {};
+										}
+									}
+								} else {
+									tmpDir.files = {};
+								}
+							}
+						} else {
+							return false;
+						}
+						
+						if(symlinkMode === exports.ALl ||
+							(symlinkMode === exports.BEGIN && i === 0) ||
+							(symlinkMode === exports.FINAL && i === pathArr.length - 1)) {
+							
+							tmpDir = self.getSymlink(tmpDir, tmpDir.parent);
+						}
+					}
+				}
+			});
+			
+			if(type == exports.FOLDER && !this.isDir(tmpDir)) tmpDir = undefined;
+			if(type == exports.FILE && this.isDir(tmpDir)) tmpDir = undefined;
+		
+			return tmpDir;
+		};
+		
+		// End easier API
+		
 		return Filesystem;
 	})();
+	
+	// New easier API
+	
+	exports.ALL    = 'all';
+	exports.BEGIN  = 'begin';
+	exports.BOTH   = 'both';
+	exports.FINAL  = 'final';
+	exports.FILE   = 'file';
+	exports.FOLDER = 'folder';
+	exports.NONE   = 'none';
+	
+	// End easier API
 
 	function parentify(data) {
 		for(var key in data.files) {
