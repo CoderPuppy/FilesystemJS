@@ -309,7 +309,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			return new RegExp('^' + part.replace(/[\.\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.?').replace(/[-[\]{}()+,^$|#\s]/g, "\\$&") + '$');
 		}
 		
-		Filesystem.prototype._getFiles = function _getFiles(where, options) {
+		Filesystem.prototype._getFiles = function _getFiles(where, options, nested) {
 			options = options || {};
 			
 			var files = [],
@@ -320,6 +320,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				dir = options.dir || this.currentDir,
 				newFiles = [],
 				folders = [],
+				wildcards = !!options.wildcards,
 				part;
 			
 			if(path[0].trim().length === 0 && path.length >= 2) {
@@ -343,9 +344,9 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			
 			searchFiles = Object.values(dir.files);
 			
-			if(part === '**') {
+			if(part === '**' && wildcards) {
 				files = searchFiles;
-			} else if(/\*|\?/g.test(part)) {
+			} else if(/\*|\?/g.test(part) && wildcards) {
 				files = searchFiles.filter(function(file) {
 					return createFileRe(part).test(self.pathTo(file, dir));
 				}); 
@@ -361,15 +362,23 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				}
 			}
 			
-			if(part === '**') {
-				newFiles = newFiles.concat(this._getFiles(joinPath(slicePath(path, 1)) || '*', { dir: dir }));
+			if(options.resolveSymlinks === exports.ALL ||
+				( options.resolveSymlinks === exports.FINAL && path.length <= 1 ) ||
+				( options.resolveSymlinks === exports.BEGIN && !nested )) {
+				files = files.map(function(file) {
+					return self.getSymlink(file, file.parent);
+				});
+			}
+			
+			if(part === '**' && wildcards) {
+				newFiles = newFiles.concat(this._getFiles(joinPath(slicePath(path, 1)) || '*', merge(clone(options), { dir: dir }), true));
 				
 				folders = files.filter(function(file) {
 					return typeof(file) == 'object' && typeof(file.files) == 'object';
 				});
 				
 				folders.forEach(function(folder) {
-					newFiles = newFiles.concat(self._getFiles(joinPath(path), merge(clone(options), { dir: folder })));
+					newFiles = newFiles.concat(self._getFiles(joinPath(path), merge(clone(options), { dir: folder }), true));
 				});
 				
 				files = newFiles;
@@ -378,7 +387,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 					return typeof(file) == 'object' && typeof(file.files) == 'object';
 				});
 				folders.forEach(function(folder) {
-					newFiles = newFiles.concat(self._getFiles(joinPath(slicePath(path, 1)), merge(clone(options), { dir: folder })));
+					newFiles = newFiles.concat(self._getFiles(joinPath(slicePath(path, 1)), merge(clone(options), { dir: folder }), true));
 				});
 				
 				files = newFiles;
