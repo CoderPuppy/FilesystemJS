@@ -18,11 +18,52 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		}))
 	};
 	
+	var pathSplitRe = /(^|\\\\|[^\\])\//g;
+	
 	function clone(o) {
 		function cloned() {}
 		cloned.prototype = o;
 		return new cloned;
 	}
+	
+	function merge(dest, source) {
+		for(key in source) {
+			dest[key] = source[key];
+		}
+		
+		return dest;
+	}
+	
+	function execRe(re, str) {
+		var matches = [], curMatch;
+		
+		while(curMatch = re.exec(str)) { matches.push(curMatch) }
+		
+		return matches;
+	}
+	
+	Object.values = function values(obj) {
+		return Object.keys(obj).map(function(key) {
+			return obj[key];
+		});
+	};
+	
+	Array.prototype.unique = function unique() {
+		var a = [];
+		var l = this.length;
+		
+		for(var i=0; i<l; i++) {
+			for(var j=i+1; j<l; j++) {
+		    	// If this[i] is found later in the array
+				if (this[i] === this[j])
+					j = ++i;
+			}
+			
+			a.push(this[i]);
+		}
+		
+		return a;
+	};
 	
 	var Filesystem = exports.Filesystem = (function() {
 		function Filesystem(data) {
@@ -211,6 +252,136 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		};
 		
 		// New easier API
+		
+		// START HIDDEN
+		
+		function splitPath(path) {
+			var parts = [],
+				splits = execRe(pathSplitRe, path),
+				lastIndex = 0;
+			
+			for(var i = 0; i < splits.length; i++) {
+				parts.push(path.slice(lastIndex, min(splits[i].index + splits[i][1].length, 0)).replace(/\\([\\\/])/g, '$1').replace(/\\([\\\/])/g, '$1'));
+				
+				parts[parts.length - 1].before = splits[i][1];
+				
+				lastIndex = splits[i].index + splits[i][1].length + 1;
+			}
+			
+			parts.push(path.slice(lastIndex + ( splits.length > i ? 1 : 0 )).replace(/\\([\\\/])/g, '$1').replace(/\\([\\\/])/g, '$1'));
+				
+			parts[parts.length - 1].before = splits.length > i ? splits[i - 1][1] : '';
+			
+			return parts;
+		}
+		
+		function joinPath(parts) {
+			var joined = '';
+			
+			if(parts.length > 0) {
+				joined += parts[0].replace(/(^|\\\\|[^\\])(\\|\/)([^\/\\]|$)/g, function($A, $1, $2, $3) {
+					return $1 + '\\' + $2 + $3;
+				})//.replace(/(^|\\\\|[^\\])([\\\/])/g, '$1\\$2');
+			
+				for(var i = 1; i < parts.length; i++) {
+					joined += '/' + parts[i].replace(/(^|\\\\|[^\\])(\\|\/)([^\/\\]|$)/g, function($A, $1, $2, $3) {
+						return $1 + '\\' + $2 + $3;
+					})//.replace(/(^|\\\\|[^\\])([\\\/])/g, '$1\\$2');
+				}
+			}
+			
+			return joined;
+		}
+		
+		function slicePath(parts, start, end) {
+			return parts.slice(start, end).map(function(v, i) {
+				return merge(v, {
+					before: parts[i].before
+				});
+			});
+		}
+		
+		function min(val, min) {
+			return val < min ? min : val;
+		}
+		
+		Filesystem.prototype._getFiles = function _getFiles(where, options) {
+			options = options || {};
+			
+			var files = [],
+				path = splitPath(typeof(where) == 'string' ? where : this.pathTo(where, options.dir || this.currentDir))/*.split(/(^|\\\\|[^\\])\//)*/,
+				searchFiles = [],
+				oriLen = path.length,
+				self = this,
+				dir = options.dir || this.currentDir,
+				newFiles = [],
+				folders = [],
+				part;
+			
+			if(path[0].trim().length === 0 && path.length >= 2) {
+				dir = this.data.root;
+				path.splice(0, 1);
+				
+				if(path[0].trim().length === 0) {
+					path.splice(0, 1);
+				}
+			}
+			if(path[0] && path[0].trim() === '.') {
+				dir = options.dir || this.currentDir;
+				path.splice(0, 1);
+			}
+			
+			if(oriLen < 1) {
+				return [ dir ];
+			}
+			
+			part = path[0];
+			
+			searchFiles = Object.values(dir.files);
+			
+			if(part === '**') {
+				files = files.concat(searchFiles);
+			} else if(/\*|\?/g.test(part)) {
+				files = files.concat(searchFiles); 
+			} else if(part == '..') {
+				files.push(dir.parent || dir);
+			} else if(dir.files[part]) {
+				files.push(dir.files[part]);
+			} else if(options.create == exports.ALL || ( options.create == exports.FINAL && path.length <= 1 )){
+				files.push(this.createFile(part, dir));
+				
+				if(path.length > 1) {
+					files[0].files = {};
+				}
+			}
+			
+			if(part === '**') {
+				newFiles = newFiles.concat(this._getFiles(joinPath(slicePath(path, 1)) || '*', { dir: dir }));
+				
+				folders = files.filter(function(file) {
+					return typeof(file) == 'object' && typeof(file.files) == 'object';
+				});
+				
+				folders.forEach(function(folder) {
+					newFiles = newFiles.concat(self._getFiles(joinPath(path), merge(clone(options), { dir: folder })));
+				});
+				
+				files = newFiles;
+			} else if(path.length > 1) {
+				folders = files.filter(function(file) {
+					return typeof(file) == 'object' && typeof(file.files) == 'object';
+				});
+				folders.forEach(function(folder) {
+					newFiles = newFiles.concat(self._getFiles(joinPath(slicePath(path, 1)), merge(clone(options), { dir: folder })));
+				});
+				
+				files = newFiles;
+			}
+			
+			return files.unique();
+		};
+		
+		// END HIDDEN
 		
 		Filesystem.prototype.file = function file(fileName, options) {
 			options = options || {};
