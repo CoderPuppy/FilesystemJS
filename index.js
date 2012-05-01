@@ -109,12 +109,13 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		};
 
 		Filesystem.prototype.pathTo = function pathTo(file, dir, /* internal */ isNested) {
+			if(!file || (!!file && !!file.name && file.name == this.data.root.name)) {
+				return '';
+			}
+			
 			if(file.name == this.data.root.name) {
 				if(!isNested) return '/';
 				else return '';
-			}
-			if(!!file === false || (!!file && !!file.name && file.name == this.data.root.name)) {
-				return '';
 			}
 		
 			return ( file.parent == dir ? '' : this.pathTo(file.parent, dir, true) + '/' ) + file.name;
