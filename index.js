@@ -491,6 +491,12 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			return files[0];
 		};
 		
+		Filesystem.prototype.files = function files(fileName, options) {
+			return this.file(fileName, merge(clone(options), {
+				multiple: true
+			}));
+		};
+		
 		Filesystem.prototype.folder = function folder(folderName, options) {
 			return this.file(folderName, merge(clone(options), {
 				type: exports.FOLDER
