@@ -389,7 +389,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		
 		// END HIDDEN
 		
-		Filesystem.prototype.file = function file(fileName, options) {
+		/*Filesystem.prototype.file = function file(fileName, options) {
 			options = options || {};
 			
 			var createMode = options.create || exports.NONE,
@@ -449,6 +449,34 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			if(type == exports.FILE && this.isDir(tmpDir)) tmpDir = undefined;
 		
 			return tmpDir;
+		};*/
+		
+		Filesystem.prototype.file = function file(fileName, options) {
+			options = options || {};
+			
+			var files = this._getFiles(fileName, options);
+			
+			if(options.create === exports.ALL || options.create === exports.FINAl) {
+				files.forEach(function(file) {
+					if(typeof(file.files) === 'undefined' && typeof(file.contents) === 'undefined' && typeof(file.symlink) === 'undefined') {
+						if(options.type === exports.FOLDER) file.files = {};
+						else if(options.type === exports.FILE) file.contents = '';
+						else if(typeof(options.symlink) == 'string') file.symlink = options.symlink;
+					}
+				});
+			} else if(options.type === exports.FILE || options.type === exports.FOLDER) {
+				files = files.filter(function(file) {
+					if(!file) return false;
+					
+					if(options.type === exports.FILE) return typeof(file.contents) !== 'undefined';
+					else if(options.type === exports.FOLDER) return typeof(file.files) === 'object';
+					else if(options.symlink) return typeof(file.symlink) === 'string';
+				});
+			}
+			
+			if(options.multiple) return files;
+			
+			return files[0];
 		};
 		
 		Filesystem.prototype.folder = function folder(folderName, options) {
