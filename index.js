@@ -354,7 +354,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				files.push(dir.parent || dir);
 			} else if(dir.files[part]) {
 				files.push(dir.files[part]);
-			} else if(options.create == exports.ALL || ( options.create == exports.FINAL && path.length <= 1 )){
+			} else if(options.create == exports.ALL || ( options.create == exports.FINAL && path.length <= 1 ) || !!options.create){
 				files.push(this.createFile(part, dir));
 				
 				if(path.length > 1) {
@@ -461,11 +461,14 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 		};*/
 		
 		Filesystem.prototype.file = function file(fileName, options) {
-			options = options || {};
+			options = merge({
+				resolveSymlinks: exports.ALL,
+				wildcards: true
+			}, options || {});
 			
 			var files = this._getFiles(fileName, options);
 			
-			if(options.create === exports.ALL || options.create === exports.FINAl) {
+			if(options.create === exports.ALL || options.create === exports.FINAl || !!options.create) {
 				files.forEach(function(file) {
 					if(typeof(file.files) === 'undefined' && typeof(file.contents) === 'undefined' && typeof(file.symlink) === 'undefined') {
 						if(options.type === exports.FOLDER) file.files = {};
