@@ -451,6 +451,18 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			return tmpDir;
 		};
 		
+		Filesystem.prototype.folder = function folder(folderName, options) {
+			return this.file(folderName, merge(clone(options), {
+				type: exports.FOLDER
+			}));
+		};
+		
+		Filesystem.prototype.folders = function folders(folderName, options) {
+			return this.folder(folderName, merge(clone(options), {
+				multiple: true
+			}));
+		};
+		
 		// End easier API
 		
 		return Filesystem;
