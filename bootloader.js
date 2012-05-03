@@ -1884,8 +1884,8 @@ define(function(gRequire, exports, module) {
 			function getFile(moduleName, create) {
 				return fs.file(moduleName + '.js', {
 					create: create || false,
-					type: fs.FILE,
-					dir: fs.folder(cfg.baseFolder, { create: true })
+					type: fs.FILE/*,
+					dir: fs.folder(cfg.baseFolder, { create: true })*/
 				});
 			}
 			
