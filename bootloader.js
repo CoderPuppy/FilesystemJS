@@ -2160,7 +2160,7 @@ define(function(gRequire, exports, module) {
 				defaultPort = hasLocation && (location.port || undefined),
 				buildMap = [];
 
-			define(function () {
+			define('text', function () {
 				var text, fs;
 
 				text = {
