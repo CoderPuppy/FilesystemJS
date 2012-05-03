@@ -524,6 +524,22 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 	exports.FOLDER = 'folder';
 	exports.NONE   = 'none';
 	
+	Filesystem.ALL    = exports.ALL;
+	Filesystem.BEGIN  = exports.BEGIN;
+	Filesystem.BOTH   = exports.BOTH;
+	Filesystem.FINAL  = exports.FINAL;
+	Filesystem.FILE   = exports.FILE;
+	Filesystem.FOLDER = exports.FOLDER;
+	Filesystem.NONE   = exports.NONE;
+	
+	Filesystem.prototype.ALL    = exports.ALL;
+	Filesystem.prototype.BEGIN  = exports.BEGIN;
+	Filesystem.prototype.BOTH   = exports.BOTH;
+	Filesystem.prototype.FINAL  = exports.FINAL;
+	Filesystem.prototype.FILE   = exports.FILE;
+	Filesystem.prototype.FOLDER = exports.FOLDER;
+	Filesystem.prototype.NONE   = exports.NONE;
+	
 	// End easier API
 
 	function parentify(data) {
