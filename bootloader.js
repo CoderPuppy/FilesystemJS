@@ -321,7 +321,10 @@ define(function(gRequire, exports, module) {
 			                // to baseUrl, pull off the leading dot.
 			                name = name.substring(2);
 			            }
+			        } else if(name && name.charAt(0) === '/') {
+			        	name = name.split('').slice(1).join('');
 			        }
+			        
 			        return name;
 			    }
 
@@ -1568,7 +1571,7 @@ define(function(gRequire, exports, module) {
 
 			                //Join the path parts together, then figure out if baseUrl is needed.
 			                url = syms.join("/") + (ext || ".js");
-			                url = (url.charAt(0) === '/' || url.match(/^\w+:/) ? "" : config.baseUrl) + url;
+			                url = /*(url.charAt(0) === '/' || url.match(/^\w+:/) ? "" : */config.baseUrl/*)*/ + (url.charAt(0) === '/' ? '' : '/'/* url.split('').slice(1) : url */) + url;
 			            }
 
 			            return config.urlArgs ? url +
