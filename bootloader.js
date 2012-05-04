@@ -2453,6 +2453,9 @@ define(function(gRequire, exports, module) {
 					if(value.contents) file.contents = value.contents;
 					else if(value.symlink) file.symlink = value.symlink;
 					else if(value.files) file.files = value.files;
+					else if(value.command) file.command = value.command;
+					
+					if(value.executable) file.executable = true;
 					
 					load(value);
 				});
