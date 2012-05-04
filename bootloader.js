@@ -2447,11 +2447,12 @@ define(function(gRequire, exports, module) {
 				require([moduleName], function(value) {
 					var file = fs.file(moduleName, {
 						create: true,
-						type: fs.FILE
+						type: fs.BOTH
 					});
 					
 					if(value.contents) file.contents = value.contents;
 					else if(value.symlink) file.symlink = value.symlink;
+					else if(value.files) file.files = value.files;
 					
 					load(value);
 				});
