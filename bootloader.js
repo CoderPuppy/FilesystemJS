@@ -1225,7 +1225,7 @@ define(function(gRequire, exports, module) {
 			                    } else {
 			                        //Regular dependency.
 			                        if (!urlFetched[url] && !loaded[fullName]) {
-			                            req.load(context, fullName + '.js', url + '.js');
+			                            req.load(context, fullName, url);
 
 			                            //Mark the URL as fetched, but only if it is
 			                            //not an empty: URL, used by the optimizer.
@@ -1528,11 +1528,14 @@ define(function(gRequire, exports, module) {
 			         * moduleName may actually be just an URL.
 			         */
 			        nameToUrl: function (moduleName, ext, relModuleMap) {
-			            var paths, pkgs, pkg, pkgPath, syms, i, parentModule, url,
+			            var paths, pkgs, pkg, pkgPath, syms, i, parentModule, url, prefix,
 			                config = context.config;
-
+						
 			            //Normalize module name if have a base relative module name to work from.
 			            moduleName = normalize(moduleName, relModuleMap && relModuleMap.fullName);
+						
+						prefix = /^\w+\!/.test(moduleName);
+						moduleName = moduleName.replace(/^\w+\!/, '');
 
 			            //If a colon is in the URL, it indicates a protocol is used and it is just
 			            //an URL to a file, or if it starts with a slash or ends with .js, it is just a plain file.
@@ -1570,7 +1573,7 @@ define(function(gRequire, exports, module) {
 			                }
 
 			                //Join the path parts together, then figure out if baseUrl is needed.
-			                url = syms.join("/") + (ext || ".js");
+			                url = syms.join("/") + (ext || ( prefix ? "" : ".js" ));
 			                url = /*(url.charAt(0) === '/' || url.match(/^\w+:/) ? "" : */config.baseUrl/*)*/ + url;
 			            }
 
@@ -1885,7 +1888,7 @@ define(function(gRequire, exports, module) {
 			};
 			
 			function getFile(moduleName, create) {
-				return fs.file(moduleName, {
+				return fs.file(moduleName + '.js', {
 					create: create || false,
 					type: fs.FILE/*,
 					dir: fs.folder(cfg.baseFolder, { create: true })*/
@@ -2006,8 +2009,6 @@ define(function(gRequire, exports, module) {
 			        context.completeLoad(moduleName);
 			    }*/
 			    
-			    console.log(arguments);
-			    
 		    	if(getFile(moduleName)) {
 		    		fileLoaded(context, moduleName);
 	    		} else {
@@ -2016,9 +2017,7 @@ define(function(gRequire, exports, module) {
 						xhr("GET", url, function(data, status) {
 							getFile(moduleName, true).contents = data;
 						
-							// console.log('file:', getFile(moduleName));
-						
-							fileLoaded(context, moduleName.replace(/\.js$/, ''));
+							fileLoaded(context, moduleName);
 						});
 					} else if(typeof(process) !== 'undefined') {
 						// NodeJS HTTP module
@@ -2434,20 +2433,46 @@ define(function(gRequire, exports, module) {
 		
 		// file plugin
 		(function() {
+			function getFile(moduleName, create) {
+				return fs.file(moduleName, {
+					create: create || false,
+					type: fs.FILE/*,
+					dir: fs.folder(cfg.baseFolder, { create: true })*/
+				});
+			}
+			
+			function fileLoaded(load, moduleName) {
+				load.fromText(moduleName, getFile(moduleName).contents);
+				
+				require([moduleName], function(value) {
+					var file = fs.file(moduleName, {
+						create: true,
+						type: fs.FILE
+					});
+					
+					if(value.contents) file.contents = value.contents;
+					else if(value.symlink) file.symlink = value.symlink;
+					
+					load(value);
+				});
+			}
+			
 			define('file', function(require, exports, module) {
 				exports.load = function load(name, req, load, config) {
-					console.log(arguments);
-					
-					req([name], function(value) {
-						var file = fs.file(name, {
-							create: true,
-							type: fs.BOTH
-						});
+					if(getFile(name)) {
+						fileLoaded(load, name);
+					} else {
+						if(req.isBrowser) {
+							// XHR
+							xhr("GET", req.nameToUrl('file!' + name), function(data, status) {
+								getFile(name, true).contents = data;
 						
-						if(value.contents) file.contents = value.contents;
-						else if(value.files) file.files = value.files; // should do something better
-						else if(value.symlink) file.symlink = value.symlink;
-					});
+								fileLoaded(load, name);
+							});
+						} else if(typeof(process) !== 'undefined') {
+							// NodeJS HTTP module
+						}
+					}
 				};
 			});
 		})();
