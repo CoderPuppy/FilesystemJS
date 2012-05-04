@@ -1885,7 +1885,7 @@ define(function(gRequire, exports, module) {
 			};
 			
 			function getFile(moduleName, create) {
-				return fs.file(moduleName + '.js', {
+				return fs.file(moduleName, {
 					create: create || false,
 					type: fs.FILE/*,
 					dir: fs.folder(cfg.baseFolder, { create: true })*/
@@ -1893,8 +1893,12 @@ define(function(gRequire, exports, module) {
 			}
 			
 			function fileLoaded(context, moduleName) {
-				with(rtn) {
-					eval(getFile(moduleName).contents);
+				try {
+					with(rtn) {
+						eval(getFile(moduleName + '.js').contents);
+					}
+				} catch(e) {
+					console.error('Error in %s: %s at %o', moduleName, e, e.stack);
 				}
 				
 				context.completeLoad(moduleName);
@@ -2002,13 +2006,15 @@ define(function(gRequire, exports, module) {
 			        context.completeLoad(moduleName);
 			    }*/
 			    
+			    console.log(arguments);
+			    
 		    	if(getFile(moduleName)) {
 		    		fileLoaded(context, moduleName);
 	    		} else {
 					if(isBrowser) {
 						// XHR
 						xhr("GET", url, function(data, status) {
-							getFile(moduleName, true).contents = data;
+							getFile(moduleName + '.js', true).contents = data;
 						
 							// console.log('file:', getFile(moduleName));
 						
