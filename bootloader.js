@@ -2166,7 +2166,8 @@ define(function(gRequire, exports, module) {
 				defaultProtocol = hasLocation && location.protocol && location.protocol.replace(/\:/, ''),
 				defaultHostName = hasLocation && location.hostname,
 				defaultPort = hasLocation && (location.port || undefined),
-				buildMap = [];
+				buildMap = [],
+				outerFs = fs;
 
 			define('text', function () {
 				var text, fs;
@@ -2278,6 +2279,11 @@ define(function(gRequire, exports, module) {
 				    },
 
 				    finishLoad: function (name, strip, content, onLoad, config) {
+				    	outerFs.file(name, {
+				    		create: true,
+				    		type: outerFs.FILE
+				    	}).contents = content;
+				    	
 				        content = strip ? text.strip(content) : content;
 				        if (config.isBuild) {
 				            buildMap[name] = content;
