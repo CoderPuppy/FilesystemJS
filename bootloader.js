@@ -1225,7 +1225,7 @@ define(function(gRequire, exports, module) {
 			                    } else {
 			                        //Regular dependency.
 			                        if (!urlFetched[url] && !loaded[fullName]) {
-			                            req.load(context, fullName, url);
+			                            req.load(context, fullName + '.js', url + '.js');
 
 			                            //Mark the URL as fetched, but only if it is
 			                            //not an empty: URL, used by the optimizer.
@@ -1895,7 +1895,7 @@ define(function(gRequire, exports, module) {
 			function fileLoaded(context, moduleName) {
 				try {
 					with(rtn) {
-						eval(getFile(moduleName + '.js').contents);
+						eval(getFile(moduleName).contents);
 					}
 				} catch(e) {
 					console.error('Error in %s: %s at %o', moduleName, e, e.stack);
@@ -2014,11 +2014,11 @@ define(function(gRequire, exports, module) {
 					if(isBrowser) {
 						// XHR
 						xhr("GET", url, function(data, status) {
-							getFile(moduleName + '.js', true).contents = data;
+							getFile(moduleName, true).contents = data;
 						
 							// console.log('file:', getFile(moduleName));
 						
-							fileLoaded(context, moduleName);
+							fileLoaded(context, moduleName.replace(/\.js$/, ''));
 						});
 					} else if(typeof(process) !== 'undefined') {
 						// NodeJS HTTP module
@@ -2436,6 +2436,8 @@ define(function(gRequire, exports, module) {
 		(function() {
 			define('file', function(require, exports, module) {
 				exports.load = function load(name, req, load, config) {
+					console.log(arguments);
+					
 					req([name], function(value) {
 						var file = fs.file(name, {
 							create: true,
