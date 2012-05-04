@@ -2157,11 +2157,12 @@ define(function(gRequire, exports, module) {
 				var manager = context.getManager(map.fullName);
 				mainModule = manager.cjsModule = {
 					id: map.name,
-					uri: map.name ? context.nameToUrl(map.name, null) : undefined,
-					exports: context.defined[map.fullName] = {}
+					uri: map.name ? context.nameToUrl(map.name, null) : undefined
 				};
 			
 				require([name]);
+				
+				mainModule.exports = context.defined[map.fullName] = {};
 			})();
 		}());
 		

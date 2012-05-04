@@ -4,5 +4,7 @@ define(function(require, exports, module) {
 	
 	console.log(fs, api);
 	
+	exports.something = 'something else';
+	
 	api();
 });
