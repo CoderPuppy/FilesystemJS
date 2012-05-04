@@ -2794,7 +2794,9 @@ define(function(gRequire, exports, module) {
 			define: define
 		};
 		
-		rtn.require([requireConfig.baseFolder.replace(/\/$/, '') + '/main']);
+		rtn.require([requireConfig.baseFolder.replace(/\/$/, '') + '/main'], function(main) {
+			rtn.exports = main;
+		});
 		
 		return rtn;
 	});
