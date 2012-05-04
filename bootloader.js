@@ -2442,13 +2442,15 @@ define(function(gRequire, exports, module) {
 			}
 			
 			function fileLoaded(load, moduleName) {
-				load.fromText(moduleName, getFile(moduleName).contents);
-				
-				require([moduleName], function(value) {
-					var file = fs.file(moduleName, {
+				try {
+					var value = JSON.parse(getFile(moduleName).contents), file;
+					
+					file = fs.file(moduleName, {
 						create: true,
-						type: fs.BOTH
+						type: fs.FILE
 					});
+					
+					delete file.contents;
 					
 					if(value.contents) file.contents = value.contents;
 					else if(value.symlink) file.symlink = value.symlink;
@@ -2457,8 +2459,26 @@ define(function(gRequire, exports, module) {
 					
 					if(value.executable) file.executable = true;
 					
-					load(value);
-				});
+					load(file);
+				} catch(e) {
+					load.fromText(moduleName, getFile(moduleName).contents);
+				
+					require([moduleName], function(value) {
+						var file = fs.file(moduleName, {
+							create: true,
+							type: fs.BOTH
+						});
+					
+						if(value.contents) file.contents = value.contents;
+						else if(value.symlink) file.symlink = value.symlink;
+						else if(value.files) file.files = value.files;
+						else if(value.command) file.command = value.command;
+					
+						if(value.executable) file.executable = true;
+					
+						load(file);
+					});
+				}
 			}
 			
 			define('file', function(require, exports, module) {
