@@ -1,4 +1,4 @@
-define(['require', 'exports', '../index', './bootloader'], function(require, exports, fs, bootLoader) {
+define(['require', 'exports', '../index', '../bootloader'], function(require, exports, fs, bootLoader) {
 	var Filesystem = fs.Filesystem;
 	var BootLoader = bootLoader.BootLoader;
 	
