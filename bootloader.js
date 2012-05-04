@@ -2426,6 +2426,24 @@ define(function(gRequire, exports, module) {
 			});
 		}());
 		
+		// file plugin
+		(function() {
+			define('file', function(require, exports, module) {
+				exports.load = function load(name, req, load, config) {
+					req([name], function(value) {
+						var file = fs.file(name, {
+							create: true,
+							type: fs.BOTH
+						});
+						
+						if(value.contents) file.contents = value.contents;
+						else if(value.files) file.files = value.files; // should do something better
+						else if(value.symlink) file.symlink = value.symlink;
+					});
+				};
+			});
+		})();
+		
 		var rtn = {
 			require: require,
 			requirejs: requirejs,
