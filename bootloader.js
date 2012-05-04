@@ -32,7 +32,7 @@ define(function(gRequire, exports, module) {
 	
     var define = undefined, requirejs = undefined, require = undefined;
     
-    var BootLoader = exports.BootLoader = (function BootLoader(fs, API, require) {
+    var BootLoader = exports.BootLoader = (function BootLoader(fs, API, require, cb) {
 		/** vim: et:ts=4:sw=4:sts=4
 		 * @license RequireJS 1.0.7 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
 		 * Available via the MIT or new BSD license.
@@ -2160,9 +2160,7 @@ define(function(gRequire, exports, module) {
 					uri: map.name ? context.nameToUrl(map.name, null) : undefined
 				};
 			
-				require([name]);
-				
-				mainModule.exports = context.defined[map.fullName] = {};
+				require([name], cb);
 			})();
 		}());
 		
