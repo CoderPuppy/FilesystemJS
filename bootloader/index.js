@@ -18,4 +18,6 @@ define(['require', 'exports', '../index', '../bootloader'], function(require, ex
 	
 	window.testFs = exports.testFs;
 	window.bootLoader = exports.bootLoader;
+	
+	console.log('exports:', window.exports = exports.exports = exports.bootLoader.exports);
 });

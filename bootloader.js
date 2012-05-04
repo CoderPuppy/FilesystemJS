@@ -47,6 +47,8 @@ define(function(gRequire, exports, module) {
 			baseFolder: 'boot'
 		}, require || {});
 		
+		var rtn, mainModule;
+		
 		require.baseFolder = require.baseFolder || '';
 		
 		var requirejs, define;
@@ -1263,6 +1265,7 @@ define(function(gRequire, exports, module) {
 			    //Define the context object. Many of these fields are on here
 			    //just to make debugging easier.
 			    context = {
+			    	getManager: getManager,
 			        contextName: contextName,
 			        config: config,
 			        defQueue: defQueue,
@@ -2146,6 +2149,20 @@ define(function(gRequire, exports, module) {
 			        req.checkReadyState();
 			    }, 0);
 			}
+			
+			(function() {
+				var name = requireConfig.baseFolder.replace(/\/$/, '') + '/main';
+				var context = contexts[defContextName];
+				var map = context.makeModuleMap(name);
+				var manager = context.getManager(map.fullName);
+				mainModule = manager.cjsModule = {
+					id: map.name,
+					uri: map.name ? context.nameToUrl(map.name, null) : undefined,
+					exports: context.defined[map.fullName] = {}
+				};
+			
+				require([name]);
+			})();
 		}());
 		
 		/**
@@ -2788,14 +2805,19 @@ define(function(gRequire, exports, module) {
 			});
 		})();
 		
-		var rtn = {
+		rtn = {
 			require: require,
 			requirejs: requirejs,
 			define: define
 		};
 		
-		rtn.require([requireConfig.baseFolder.replace(/\/$/, '') + '/main'], function(main) {
-			rtn.exports = main;
+		Object.defineProperties(rtn, {
+			exports: {
+				get: function() {
+					return mainModule.exports;
+				},
+				enumerable: true
+			}
 		});
 		
 		return rtn;
