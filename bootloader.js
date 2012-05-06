@@ -2493,7 +2493,7 @@ define(function(gRequire, exports, module) {
 			define('json', {
 				load: function (name, req, onLoad, config) {
 			        req(['text!' + name], function(content) {
-			        	onLoad(JSON.parse(content));
+						onLoad(fs.file(name).contents = JSON.parse(content));
 			        });
 			    }
 		    });
