@@ -2492,7 +2492,7 @@ define(function(gRequire, exports, module) {
 		(function () {
 			define('json', {
 				load: function (name, req, onLoad, config) {
-			        req('text!' + name, function(content) {
+			        req(['text!' + name], function(content) {
 			        	onLoad(JSON.parse(content));
 			        });
 			    }
