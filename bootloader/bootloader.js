@@ -32,7 +32,7 @@ define(function(gRequire, exports, module) {
 	
     var define = undefined, requirejs = undefined, require = undefined;
     
-    var BootLoader = exports.BootLoader = (function BootLoader(fs, API, require, cb) {
+    var BootLoader = exports.BootLoader = (function BootLoader(fs, API, require) {
 		/** vim: et:ts=4:sw=4:sts=4
 		 * @license RequireJS 1.0.7 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
 		 * Available via the MIT or new BSD license.
@@ -46,8 +46,6 @@ define(function(gRequire, exports, module) {
 		var requireConfig = require = merge({
 			baseFolder: 'boot'
 		}, require || {});
-		
-		var rtn, name;
 		
 		require.baseFolder = require.baseFolder || '';
 		
@@ -323,10 +321,7 @@ define(function(gRequire, exports, module) {
 			                // to baseUrl, pull off the leading dot.
 			                name = name.substring(2);
 			            }
-			        } else if(name && name.charAt(0) === '/') {
-			        	name = name.split('').slice(1).join('');
 			        }
-			        
 			        return name;
 			    }
 
@@ -851,16 +846,12 @@ define(function(gRequire, exports, module) {
 			                    deps[i] = defined[fullName] = {};
 			                    manager.usingExports = true;
 			                } else if (depName === "module") {
-			                	if(typeof(manager.cjsModule) !== "object") {
-							            //CommonJS module spec 1.1
-							            manager.cjsModule = {
-							                id: name,
-							                uri: name ? context.nameToUrl(name, null, relModuleMap) : undefined,
-							                exports: defined[fullName]
-							            };
-					            }
-					            
-					            cjsMod = deps[i] = manager.cjsModule;
+			                    //CommonJS module spec 1.1
+			                    manager.cjsModule = cjsMod = deps[i] = {
+			                        id: name,
+			                        uri: name ? context.nameToUrl(name, null, relModuleMap) : undefined,
+			                        exports: defined[fullName]
+			                    };
 			                } else if (depName in defined && !(depName in waiting) &&
 			                           (!(fullName in needFullExec) ||
 			                            (fullName in needFullExec && fullExec[depName]))) {
@@ -1269,7 +1260,6 @@ define(function(gRequire, exports, module) {
 			    //Define the context object. Many of these fields are on here
 			    //just to make debugging easier.
 			    context = {
-			    	getManager: getManager,
 			        contextName: contextName,
 			        config: config,
 			        defQueue: defQueue,
@@ -1535,14 +1525,11 @@ define(function(gRequire, exports, module) {
 			         * moduleName may actually be just an URL.
 			         */
 			        nameToUrl: function (moduleName, ext, relModuleMap) {
-			            var paths, pkgs, pkg, pkgPath, syms, i, parentModule, url, prefix,
+			            var paths, pkgs, pkg, pkgPath, syms, i, parentModule, url,
 			                config = context.config;
-						
+
 			            //Normalize module name if have a base relative module name to work from.
 			            moduleName = normalize(moduleName, relModuleMap && relModuleMap.fullName);
-						
-						prefix = /^\w+\!/.test(moduleName);
-						moduleName = moduleName.replace(/^\w+\!/, '');
 
 			            //If a colon is in the URL, it indicates a protocol is used and it is just
 			            //an URL to a file, or if it starts with a slash or ends with .js, it is just a plain file.
@@ -1580,8 +1567,8 @@ define(function(gRequire, exports, module) {
 			                }
 
 			                //Join the path parts together, then figure out if baseUrl is needed.
-			                url = syms.join("/") + (ext || ( prefix ? "" : ".js" ));
-			                url = /*(url.charAt(0) === '/' || url.match(/^\w+:/) ? "" : */config.baseUrl/*)*/ + url;
+			                url = syms.join("/") + (ext || ".js");
+			                url = (url.charAt(0) === '/' || url.match(/^\w+:/) ? "" : config.baseUrl) + url;
 			            }
 
 			            return config.urlArgs ? url +
@@ -1903,12 +1890,8 @@ define(function(gRequire, exports, module) {
 			}
 			
 			function fileLoaded(context, moduleName) {
-				try {
-					with(rtn) {
-						eval(getFile(moduleName).contents);
-					}
-				} catch(e) {
-					console.error('Error in %s: at %s', moduleName, e.stack);
+				with(rtn) {
+					eval(getFile(moduleName).contents);
 				}
 				
 				context.completeLoad(moduleName);
@@ -2019,46 +2002,17 @@ define(function(gRequire, exports, module) {
 		    	if(getFile(moduleName)) {
 		    		fileLoaded(context, moduleName);
 	    		} else {
-					if(isBrowser || isWebWorker) {
+					if(isBrowser) {
 						// XHR
 						xhr("GET", url, function(data, status) {
 							getFile(moduleName, true).contents = data;
 						
+							// console.log('file:', getFile(moduleName));
+						
 							fileLoaded(context, moduleName);
 						});
-					} else if(typeof(process) === 'object' &&
-							typeof(process.versions) === 'object' &&
-							typeof(process.versions.node) === 'string') {
-						var parsedUrl = gRequire('url').parse(url), fs, http;
-						
-						if(parsedUrl.protocol) { // http
-							http = gRequire('http');
-							
-							http.get(parsedUrl, function(res) {
-								console.log(res);
-								
-								var data = '';
-								
-								res.setEncoding('utf8');
-								res.on('data', function(d) {
-									data += d;
-								}).on('end', function() {
-									getFile(moduleName, true).contents = data;
-									
-									fileLoaded(context, moduleName);
-								});
-							});
-						} else { // fs
-							fs = gRequire('fs');
-							
-							fs.readFile(url, function(err, data) {
-								if(err) throw err;
-								
-								getFile(moduleName, true).contents = data + '';
-								
-								fileLoaded(context, moduleName);
-							});
-						}
+					} else if(typeof(process) !== 'undefined') {
+						// NodeJS HTTP module
 					}
 				}
 			    
@@ -2184,20 +2138,6 @@ define(function(gRequire, exports, module) {
 			        req.checkReadyState();
 			    }, 0);
 			}
-			
-			(function() {
-				name = requireConfig.baseFolder.replace(/\/$/, '') + '/main';
-				/*var context = contexts[defContextName];
-				var map = context.makeModuleMap(name);
-				var manager = context.getManager(map);
-				
-				mainModule = manager.cjsModule = {
-					id: map.name,
-					uri: map.name ? context.nameToUrl(map.name, null) : undefined
-				};*/
-				
-				require([name], cb);
-			})();
 		}());
 		
 		/**
@@ -2218,10 +2158,9 @@ define(function(gRequire, exports, module) {
 				defaultProtocol = hasLocation && location.protocol && location.protocol.replace(/\:/, ''),
 				defaultHostName = hasLocation && location.hostname,
 				defaultPort = hasLocation && (location.port || undefined),
-				buildMap = [],
-				outerFs = fs;
+				buildMap = [];
 
-			define('text', function () {
+			define(function () {
 				var text, fs;
 
 				text = {
@@ -2331,11 +2270,6 @@ define(function(gRequire, exports, module) {
 				    },
 
 				    finishLoad: function (name, strip, content, onLoad, config) {
-				    	outerFs.file(name, {
-				    		create: true,
-				    		type: outerFs.FILE
-				    	}).contents = content;
-				    	
 				        content = strip ? text.strip(content) : content;
 				        if (config.isBuild) {
 				            buildMap[name] = content;
@@ -2359,8 +2293,8 @@ define(function(gRequire, exports, module) {
 				        }
 
 				        var parsed = text.parseName(name),
-				            nonStripName = ( !!parsed.moduleName.length ? parsed.moduleName + '.' : '' ) + parsed.ext,
-				            url = req.toUrl('text!' + nonStripName),
+				            nonStripName = parsed.moduleName + '.' + parsed.ext,
+				            url = req.toUrl(nonStripName),
 				            useXhr = (config && config.text && config.text.useXhr) ||
 				                     text.useXhr;
 
@@ -2435,7 +2369,7 @@ define(function(gRequire, exports, module) {
 				         process.versions &&
 				         !!process.versions.node) {
 				    //Using special require.nodeRequire, something added by r.js.
-				    fs = gRequire('fs');
+				    fs = require.nodeRequire('fs');
 
 				    text.get = function (url, callback) {
 				        var file = fs.readFileSync(url, 'utf8');
@@ -2489,104 +2423,13 @@ define(function(gRequire, exports, module) {
 			});
 		}());
 		
-		(function () {
-			define('json', {
-				load: function (name, req, onLoad, config) {
-			        req('text!' + name, function(content) {
-			        	onLoad(JSON.parse(content));
-			        });
-			    }
-		    });
-		}());
-		
-		// file plugin
-		(function() {
-			function getFile(moduleName, create) {
-				return fs.file(moduleName, {
-					create: create || false,
-					type: fs.FILE/*,
-					dir: fs.folder(cfg.baseFolder, { create: true })*/
-				});
-			}
-			
-			function fileLoaded(load, moduleName) {
-				try {
-					var value = JSON.parse(getFile(moduleName).contents), file;
-					
-					file = fs.file(moduleName, {
-						create: true,
-						type: fs.FILE
-					});
-					
-					delete file.contents;
-					
-					if(value.contents) file.contents = value.contents;
-					else if(value.symlink) file.symlink = value.symlink;
-					else if(value.files) file.files = value.files;
-					else if(value.command) file.command = value.command;
-					
-					if(value.executable) file.executable = true;
-					
-					load(file);
-				} catch(e) {
-					load.fromText(moduleName, getFile(moduleName).contents);
-				
-					require([moduleName], function(value) {
-						var file = fs.file(moduleName, {
-							create: true,
-							type: fs.BOTH
-						});
-					
-						if(value.contents) file.contents = value.contents;
-						else if(value.symlink) file.symlink = value.symlink;
-						else if(value.files) file.files = value.files;
-						else if(value.command) file.command = value.command;
-					
-						if(value.executable) file.executable = true;
-					
-						load(file);
-					});
-				}
-			}
-			
-			define('file', function(require, exports, module) {
-				exports.load = function load(name, req, load, config) {
-					if(getFile(name)) {
-						fileLoaded(load, name);
-					} else {
-						if(req.isBrowser) {
-							// XHR
-							xhr("GET", req.nameToUrl('file!' + name), function(data, status) {
-								getFile(name, true).contents = data;
-						
-								fileLoaded(load, name);
-							});
-						} else if(typeof(process) !== 'undefined') {
-							// NodeJS HTTP module
-						}
-					}
-				};
-			});
-		})();
-		
-		rtn = {
+		var rtn = {
 			require: require,
 			requirejs: requirejs,
 			define: define
 		};
 		
-		Object.defineProperties(rtn, {
-			exports: {
-				get: function() {
-					try {
-						return require(name);
-					} catch(e) {
-						return undefined;
-					}
-				},
-				enumerable: true
-			}
-		});
+		rtn.require([requireConfig.baseFolder.replace(/\/$/, '') + '/main']);
 		
 		return rtn;
 	});

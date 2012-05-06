@@ -14,10 +14,10 @@ define(['require', 'exports', '../index', '../bootloader'], function(require, ex
 		console.log('called api');
 	}, {
 		baseUrl: 'filesystem'
+	}, function(main) {
+		console.log('exports:', window.exports = exports.exports = main);
 	});
 	
 	window.testFs = exports.testFs;
 	window.bootLoader = exports.bootLoader;
-	
-	console.log('exports:', window.exports = exports.exports = exports.bootLoader.exports);
 });

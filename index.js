@@ -342,7 +342,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 			
 			part = path[0];
 			
-			searchFiles = Object.values(dir.files);
+			searchFiles = Object.values(typeof(dir.files) === 'object' ? dir.files : {});
 			
 			if(part === '**' && wildcards) {
 				files = searchFiles;
@@ -352,7 +352,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 				}); 
 			} else if(part == '..') {
 				files.push(dir.parent || dir);
-			} else if(dir.files[part]) {
+			} else if(typeof(dir.files) === 'object' && dir.files[part]) {
 				files.push(dir.files[part]);
 			} else if(options.create == exports.ALL || ( options.create == exports.FINAL && path.length <= 1 ) || !!options.create){
 				files.push(this.createFile(part, dir));
@@ -377,7 +377,7 @@ define(['require', 'exports', './stream'], function(require, exports, Stream) {
 					return typeof(file) == 'object' && typeof(file.files) == 'object';
 				});
 				
-				folders.forEach(function(folder) {
+				files.forEach(function(folder) {
 					newFiles = newFiles.concat(self._getFiles(joinPath(path), merge(clone(options), { dir: folder }), true));
 				});
 				
